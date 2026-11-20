@@ -1,0 +1,29 @@
+SASUKE UCHIHA · GARDE ET RESPIRATION
+Version de départ : Sasuke au début de Shippuden, tenue Hebi, katana au fourreau.
+
+1. IMAGE DE GARDE — NANO BANANA PRO
+
+Joindre « Naruto - Garde tactique - Omni.png », situé un dossier au-dessus.
+Format 16:9 horizontal. Nom conseillé pour le résultat : « Sasuke - Garde.png ».
+
+Prompt à copier
+
+Édite l’image jointe pour créer le personnage jouable de Sasuke Uchiha au début de Naruto Shippuden. Remplace entièrement Naruto par Sasuke. Reprends le même dessin animé 2D au trait fin, les aplats ombrés, la même lumière et les mêmes proportions du corps. La référence fixe exactement la caméra de jeu : trois-quarts en légère plongée, les deux épaules et le dessus des sandales visibles. Sasuke regarde vers la droite de l’écran. Garde sa tête et ses semelles à la même hauteur dans le cadre que celles de Naruto. Corps entier centré, hauteur de la silhouette environ 62 % de l’image, semelle la plus basse à 80 % de la hauteur. Plan fixe 16:9.
+
+Sasuke a les cheveux noirs bleutés en pointes vers la nuque, deux mèches qui encadrent le visage, les yeux sombres et une expression calme. Chemise blanc cassé à col haut ouverte sur le torse, manches au coude, protège-avant-bras sombres, pantalon bleu nuit, sandales ninja, épaisse corde violette nouée à la taille. Un seul katana dans son fourreau sombre, glissé derrière la ceinture ; la poignée dépasse et se lit dans la silhouette. Pose de garde de sabreur : buste droit, genoux légèrement fléchis, poids sur la jambe arrière, main près de la poignée, autre main détendue devant le buste. Les deux appuis sont visibles. Les bras, la corde et le fourreau se distinguent à petite taille.
+
+Remplace le magenta de la référence par un fond vert chroma uniforme #00FF00, y compris entre les jambes et autour de la poignée. Le vert appartient uniquement au fond. Contours propres, couleurs du costume franches. Un seul Sasuke dans le cadre. Aucun décor, sol dessiné, texte, ombre portée, bandeau de Naruto, motif de moustaches, chakra ni éclair.
+
+Contrôle avant la vidéo : comparer les deux images à la même taille. Le visage regarde à droite, les appuis correspondent, la poignée sort bien du fourreau et la corde violette reste lisible.
+
+2. BOUCLE DE GARDE — OMNI 1.2 FLASH
+
+Image vers vidéo · 16:9 · 360p · 3 secondes.
+First frame et Last frame : la même image « Sasuke - Garde.png ».
+Nom conseillé : « Sasuke - Respiration de combat - Omni.mp4 ».
+
+Prompt à copier
+
+Anime cette garde de Sasuke en une boucle de trois secondes pour un jeu tactique en vue de trois-quarts légèrement plongeante. Un seul souffle calme : la cage thoracique se soulève légèrement pendant la première moitié, le col blanc suit le mouvement, puis le torse redescend pendant la seconde moitié. Les pointes de ses cheveux se soulèvent à peine et se reposent avec un très léger retard. Garde ses yeux dirigés vers la droite, les deux semelles exactement sur leurs points de départ, les mains à leur place et le katana dans son fourreau. Le nœud violet conserve sa forme. Le mouvement doit rester perceptible quand le personnage est affiché en petit. La fin retrouve naturellement la pose du début.
+
+Caméra entièrement verrouillée pendant toute la prise : aucun zoom, dézoom, panoramique, travelling, recadrage, rotation ni changement de perspective. Même taille du personnage du premier au dernier dessin. Fond vert chroma uni #00FF00 sur chaque image. Maintiens les cheveux, les sandales et le fourreau entièrement dans le cadre. Aucun pas, dégainé, éclair, particule, décor ni ombre portée.

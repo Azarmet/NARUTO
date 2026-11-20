@@ -1,0 +1,9 @@
+Create a three-second environmental reaction on the supplied empty anime dojo courtyard. Use the same courtyard image for the first and last frame. Fixed elevated wide shot. Match the framing, colours, sand markings, fence, roof and trees for the entire take. The building stays on the right. The game will add the attack and its point of impact separately.
+
+0.00–0.25 s. Start on the supplied still. A single brief cyan-white reflection catches the edges of the roof tiles, fence rails and leaves across the entire courtyard at the same instant. Preserve the painted textures through the flash.
+
+0.25–1.35 s. The whole courtyard jolts from a pressure change. All red cloth ties snap upward where they are fastened. Bamboo crowns shudder sharply and recoil. Foreground grass flattens and springs back. In scattered patches across the sand, a few fine grains jump vertically and fall back on the same patches. Keep the open battlefield readable for the game characters.
+
+1.35–3.00 s. The cyan light has gone. Thin leaves flutter on their branches. The fence ties overshoot once, then settle. Return to the exact supplied empty courtyard and hold it still for the last quarter-second.
+
+Environmental reaction only. No visible point of origin, expanding circle, ground ring, dust column, explosion, projectile, human figure or shadow of a fighter. No stream of wind travelling from either side, no leaves flying across the screen. No camera shake, zoom, pan, cut or change of perspective.

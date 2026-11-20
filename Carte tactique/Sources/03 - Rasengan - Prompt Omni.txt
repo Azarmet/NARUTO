@@ -1,0 +1,13 @@
+Animate a single four-second 16:9 anime game sprite shot of Naruto forming and striking with one Rasengan. Use the same supplied guard image for the first and last frame. Match its elevated three-quarter camera, screen-right facing, costume, linework, scale and sandal positions. Draw full-body movement with clear silhouettes that read at 640 × 360.
+
+0.00–1.40 s — Naruto sinks into his rear leg and cups his right palm beside his right hip, clear of his jacket. A pinprick of blue chakra lights above the palm. Fine curved strokes whirl around it, crossing at different angles until they form a dense, spinning blue sphere about the width of his head. Let the fingers overlap its lower rim. His left hand guards and his eyes stay on the imagined opponent to screen right.
+
+1.40–1.95 s — Naruto coils his torso and leans forward. Hold the sphere low in the same cupped hand. Its outer strokes tighten and spin faster. The bright core follows the palm through every change of angle.
+
+1.95–2.20 s — One sharp palm thrust at chest height. Drive from the supporting leg through the hips and shoulder. The right arm sweeps forward, bringing the Rasengan with it. Let the jacket and headband ties follow a beat later. Keep Naruto on his starting spot for the game to move him toward its chosen target.
+
+2.20–2.40 s — At full extension, briefly compress the sphere against an imagined contact point just beyond the palm. Give its surface one compact cyan-white pulse. The last strokes curl inward and the light goes out at the hand.
+
+2.40–4.00 s — Fold the arm, shift the weight back and settle into the original guard. Let the ties finish their swing. End on the supplied guard with both hands clear of chakra.
+
+Lock camera and scale. Keep a clear margin of at least 15% on every edge throughout, including fingers, ribbons and chakra. Use a crisp blue cel-shaded rim, curved white highlights and a tight halo contained around the sphere. Preserve a flat solid #FF00FF background, including gaps between limbs. Naruto and the hand-held sphere are the only visible elements. Omit the opponent, detached projectiles, impact burst, floor, cast shadow, dust and camera shake.

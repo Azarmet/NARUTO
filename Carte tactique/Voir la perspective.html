@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cour du dojo · Carte tactique</title>
+<style>
+  * {box-sizing:border-box}
+  body {margin:0;background:#191d1a;color:#f5f2e8;font:16px/1.45 system-ui,sans-serif}
+  main {max-width:1440px;margin:auto;padding:20px}
+  header {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  h1 {font-size:clamp(22px,3vw,30px);margin:0} button {font:inherit;color:inherit;background:#303b32;border:1px solid #718071;border-radius:6px;padding:7px 12px;cursor:pointer}
+  .controls {display:flex;gap:8px;flex-wrap:wrap}
+  #moves {display:inline-flex;flex-wrap:wrap;max-width:100%;gap:2px;padding:2px;border-radius:8px;background:#202820;border:1px solid #657165}
+  #moves[hidden] {display:none}
+  #moves button {border:0;background:transparent}
+  #moves button[aria-pressed="true"] {background:#dbdfca;color:#18251c}
+  #moves #rasengan[aria-pressed="true"] {color:#092b38;background:#a6e4f5}
+  #moves #rasenshuriken[aria-pressed="true"] {color:#10332d;background:#abe9d8}
+  button:focus-visible,canvas:focus-visible {outline:3px solid #a6e4f5;outline-offset:2px}
+  button:disabled {opacity:.6;cursor:default}
+  canvas {display:block;width:100%;height:auto;background:#384437;border-radius:8px;cursor:crosshair;touch-action:manipulation} p {margin:8px 0;color:#d4d4c4}
+</style>
+<main><header><h1>Cour du dojo</h1><div class="controls">
+<div id="moves" role="group" aria-label="Choisir une attaque"><button id="taijutsu" type="button" aria-pressed="true" disabled>Taijutsu</button><button id="rasengan" type="button" aria-pressed="false" disabled>Rasengan</button><button id="rasenshuriken" type="button" aria-label="Fûton Rasen Shuriken, attaque ultime" aria-pressed="false" disabled>Rasen Shuriken</button><button id="katana" type="button" aria-pressed="false" disabled>Katana de Sasuke</button><button id="chidori" type="button" aria-pressed="false" disabled>Chidori</button><button id="kirin" type="button" aria-pressed="false" disabled>Kirin</button></div>
+<button id="ultimate-sound" type="button" aria-pressed="true" hidden>Son activé</button><button id="pause" type="button" disabled>Pause</button><button id="mode" type="button" aria-pressed="false">Voir le 6 contre 6</button></div></header>
+<canvas width="1920" height="1080" id="arena" tabindex="0" aria-describedby="help" aria-label="Cour du dojo, terrain tactique"></canvas>
+<p id="help" aria-live="polite">Clique sur le terrain pour placer Naruto au premier plan ou au fond.</p></main>
+<script src="Animations/rasengan.js"></script>
+<script src="Animations/rasen-shuriken-fx.js"></script>
+<script src="Animations/rasen-shuriken-cinema.js"></script>
+<script src="Animations/rasen-shuriken.js"></script>
+<script src="Animations/kirin-cinema.js"></script>
+<script>
+const arena=document.querySelector('#arena'), ctx=arena.getContext('2d');
+const toggle=document.querySelector('#mode'), pause=document.querySelector('#pause'), help=document.querySelector('#help');
+const soundButton=document.querySelector('#ultimate-sound');
+const ultimateSound=new Audio('Animations/Rasen Shuriken - Son Omni.m4a');
+const taijutsuSound=new Audio('Animations/Naruto - Taijutsu - Son Omni.m4a');
+const katanaSound=new Audio('Animations/Sasuke - Katana - Son Omni.m4a');
+taijutsuSound.preload='auto';
+katanaSound.preload='auto';
+taijutsuSound.playbackRate=3.25;
+katanaSound.playbackRate=2.65;
+const rasenganSound=new Audio('Animations/Rasengan - Son Omni.m4a');
+rasenganSound.preload='auto';
+rasenganSound.playbackRate=1.75;
+const chidoriSound=new Audio('Animations/Sasuke - Chidori.m4a');
+chidoriSound.preload='auto';
+chidoriSound.playbackRate=1.35;
+ultimateSound.preload='auto';
+let soundEnabled=true,alignSoundOnStart=false,nextSoundCheck=0;
+const moves=document.querySelector('#moves'),moveButtons=Array.from(moves.querySelectorAll('button'));
+const moveNames={taijutsu:'Combo de taijutsu',rasengan:'Rasengan',rasenshuriken:'Fûton Rasen Shuriken',katana:'Combo au katana de Sasuke',chidori:'Chidori de Sasuke',kirin:'Kirin de Sasuke'};
+const ground=new Image(), actor=new Image(), idle=new Image(), combo=new Image();
+const animatedGround=document.createElement('video');
+animatedGround.src='Décor/Cour du dojo - animée 2.mp4';
+animatedGround.muted=true;
+animatedGround.loop=true;
+animatedGround.playsInline=true;
+animatedGround.preload='auto';
+animatedGround.addEventListener('loadeddata',()=>{if(ready)draw()});
+const sasukeIdle=new Image();
+const sasukeCombo=new Image();
+const chidoriAtlas=new Image();
+chidoriAtlas.src='Animations/Sasuke - Chidori.webp';
+sasukeCombo.src='Animations/Sasuke - Combo katana.webp';
+sasukeIdle.src='Animations/Sasuke - Idle.webp';
+ground.src='Décor/Terrain - Cour du dojo.png';
+actor.src='Sources/Naruto - Garde tactique.png';
+idle.src='Animations/Idle.webp';
+combo.src='Animations/Combo.webp';
+const clip={fps:24,count:72,columns:9,width:176,height:264,pivotX:95.2,pivotY:228.3};
+const comboClip={columns:9,width:256,height:272,pivotX:79.2,pivotY:232.3};
+const impacts=[{frame:9,x:115,y:-126},{frame:15,x:121,y:-132},{frame:36,x:164,y:-107}];
+const firstFrame=2,lastFrame=55,frameMs=1000/(24*3.25),approachMs=150,returnMs=180;
+const strikeEnd=approachMs+(lastFrame-firstFrame+1)*frameMs;
+let formation=location.hash!=='#solo', single={x:550,y:680}, ready=false, animated=false, combatReady=false, paused=false;
+let attack=null,highlight=null;
+let selectedMove='taijutsu',rasenganReady=false,shurikenReady=false,katanaReady=false,chidoriReady=false,kirinReady=false;
+let totalMs=0,previousTime=null,tick=0,request=0,groundFrameRequest=0;
+function scaleAt(y){return (255+(y-680)*.18)/225}
+function clamp(value){return Math.max(0,Math.min(1,value))}
+function smooth(value){const t=clamp(value);return t*t*(3-2*t)}
+function shadow(x,y,rx,ry){
+  ctx.save();ctx.translate(x,y);ctx.scale(rx,ry);
+  const g=ctx.createRadialGradient(0,0,0,0,0,1);g.addColorStop(0,'rgba(65,42,25,.44)');g.addColorStop(1,'rgba(65,42,25,0)');
+  ctx.fillStyle=g;ctx.fillRect(-1,-1,2,2);ctx.restore();
+}
+function drawActor(x,y,facing,phase=0,attackFrame=null,opacity=1,recoil=0,specialFrame=null,animation=null,isSasuke=false){
+  const scale=scaleAt(y);
+  ctx.save();ctx.translate(x,y);ctx.scale(scale*facing,scale);
+  ctx.globalAlpha=opacity;
+  const lift=attackFrame===null?0:smooth((attackFrame-26)/6)*(1-smooth((attackFrame-42)/8));
+  ctx.save();ctx.globalAlpha*=1-lift*.75;
+  shadow(-45.2,22,20,4.3);shadow(45.2,-22,22,4);ctx.restore();
+  ctx.translate(-recoil,0);ctx.rotate(-recoil*.004);
+  if(specialFrame!==null){
+    animation.drawFrame(ctx,specialFrame);
+  }else if(isSasuke&&sasukeIdle.complete&&sasukeIdle.naturalWidth){
+    const frame=(tick+phase)%72;
+    ctx.drawImage(sasukeIdle,frame%9*256,Math.floor(frame/9)*288,256,288,-115,-255,256,288);
+  }else if(attackFrame!==null||animated){
+    const isAttack=attackFrame!==null;
+    const spec=isAttack?comboClip:clip;
+    const frame=isAttack?attackFrame:(tick+phase)%clip.count;
+    const sx=(frame%spec.columns)*spec.width,sy=Math.floor(frame/spec.columns)*spec.height;
+    ctx.drawImage(isAttack?combo:idle,sx,sy,spec.width,spec.height,-spec.pivotX,-spec.pivotY,spec.width,spec.height);
+  }else if(actor.naturalWidth){
+    ctx.drawImage(actor,-957.5/3,-781/3,640,360);
+  }
+  ctx.restore();
+}
+const units=[];
+for(let row=0;row<3;row++)for(let col=0;col<2;col++){
+  const x=274+col*286+(row%2)*115, y=430+row*210+col*43;
+  const slot=(row*2+col)*2;
+  units.push({x,y,facing:1,phase:(slot*19)%clip.count},{x:1920-x,y,facing:-1,phase:((slot+1)*19)%clip.count});
+}
+const fighter=units[6];
+const sasuke=units[7];
+units.splice(0,units.length,fighter,sasuke);
+const enemies=units.filter(unit=>unit.facing===-1);
+units.sort((a,b)=>a.y-b.y);
+const katanaApproach=150,katanaFrameMs=1000/(24*2.65),katanaFrames=59;
+const katanaStrikeEnd=katanaApproach+katanaFrames*katanaFrameMs;
+const katanaDuration=katanaStrikeEnd+180;
+const katanaAnimation={
+  drawFrame(context,frame){
+    context.drawImage(sasukeCombo,frame%9*480,Math.floor(frame/9)*270,480,270,
+      -320,-290,640,360);
+  },
+  pose(elapsed){
+    const scale=scaleAt(fighter.y);
+    const closeX=fighter.x+160*scale;
+    const travel=elapsed<katanaApproach?smooth(elapsed/katanaApproach):
+      elapsed<katanaStrikeEnd?1:1-smooth((elapsed-katanaStrikeEnd)/180);
+    const frame=Math.min(katanaFrames-1,Math.max(0,Math.floor((elapsed-katanaApproach)/katanaFrameMs)));
+    return {...sasuke,x:sasuke.x+(closeX-sasuke.x)*travel,
+      y:sasuke.y+(fighter.y-sasuke.y)*travel,
+      opacity:1-.65*Math.sin(Math.PI*travel),
+      specialFrame:elapsed>=katanaApproach&&elapsed<katanaStrikeEnd?frame:null};
+  },
+  recoil(elapsed){
+    return [15,21,33].reduce((amount,frame)=>{
+      const age=elapsed-katanaApproach-frame*katanaFrameMs;
+      return amount+(age>=0&&age<150?12*Math.sin(Math.PI*age/150):0);
+    },0);
+  }
+};
+const chidoriRate=1.35, chidoriFrameMs=1000/(24*chidoriRate);
+const chidoriClipEnd=72*chidoriFrameMs, chidoriDuration=chidoriClipEnd+220;
+const chidoriAnimation={
+  drawFrame(context,frame){
+    context.drawImage(chidoriAtlas,frame%9*480,Math.floor(frame/9)*270,480,270,-320,-290,640,360);
+  },
+  pose(elapsed){
+    const frame=Math.min(71,Math.floor(elapsed/chidoriFrameMs));
+    const rush=smooth((frame-39)/7);
+    const retreat=smooth((elapsed-chidoriClipEnd)/220);
+    const travel=rush*(1-retreat);
+    const closeX=fighter.x+160*scaleAt(fighter.y);
+    return {...sasuke,x:sasuke.x+(closeX-sasuke.x)*travel,
+      y:sasuke.y+(fighter.y-sasuke.y)*travel,
+      opacity:1-.7*Math.sin(Math.PI*retreat),
+      specialFrame:elapsed<chidoriClipEnd?frame:null};
+  },
+  recoil(elapsed){
+    const age=elapsed-46*chidoriFrameMs;
+    return 22*smooth(age/70)*(1-smooth((age-100)/400));
+  }
+};
+function attackPose(elapsed){
+  const target=attack.target,scale=scaleAt(target.y);
+  const frame=Math.min(lastFrame,firstFrame+Math.max(0,Math.floor((elapsed-approachMs)/frameMs)));
+  // The airborne kick extends farther than the two jabs. Keep its sandal at the defender's body.
+  const jump=smooth((frame-23)/12)*(1-smooth((frame-42)/11));
+  const closeX=target.x-(126+34*jump)*scale, closeY=target.y+3;
+  const inward=elapsed<approachMs, outward=elapsed>=strikeEnd;
+  const travel=inward?smooth(elapsed/approachMs):outward?1-smooth((elapsed-strikeEnd)/returnMs):1;
+  const arc=Math.sin(Math.PI*travel);
+  return {x:fighter.x+(closeX-fighter.x)*travel,y:fighter.y+(closeY-fighter.y)*travel-arc*30,
+    facing:1,phase:fighter.phase,frame:inward||outward?null:frame,opacity:1-.8*arc};
+}
+function hitEffects(elapsed,pose){
+  const scale=scaleAt(pose.y);
+  impacts.forEach(({frame,x,y},i)=>{
+    const age=elapsed-approachMs-(frame-firstFrame)*frameMs;
+    const life=i===2?155:90;
+    if(age<0||age>=life)return;
+    const t=age/life, reach=(i===2?25:15)*scale*(.7+1.1*t);
+    ctx.save();ctx.translate(pose.x+x*scale,pose.y+y*scale);ctx.rotate(i*1.1);
+    ctx.globalAlpha=(1-t)**1.3;
+    ctx.beginPath();
+    for(let ray=0;ray<12;ray++){
+      const angle=ray*Math.PI/6,r=(ray%2?.18:(ray%4?.67:1))*reach;
+      const px=r*Math.cos(angle),py=r*Math.sin(angle);if(ray===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+    }
+    ctx.closePath();ctx.fillStyle='#fff6d3';ctx.strokeStyle='#c27d38';ctx.lineWidth=1.5*scale;ctx.fill();ctx.stroke();ctx.restore();
+  });
+}
+function ring(unit){
+  ctx.save();ctx.strokeStyle='#ffe8a8';ctx.lineWidth=3;ctx.shadowColor='#73542b';ctx.shadowBlur=3;
+  ctx.beginPath();ctx.ellipse(unit.x,unit.y,66*scaleAt(unit.y),19*scaleAt(unit.y),0,0,Math.PI*2);ctx.stroke();ctx.restore();
+}
+function draw(){
+  if(!ready)return;
+  const backdrop=animatedGround.readyState>=2?animatedGround:ground;
+  const elapsed=attack?totalMs-attack.start:0;
+  const cast=attack?.cast;
+  if(attack?.move==='kirin'){
+    KirinCinema.draw(ctx,backdrop,sasuke,attack.target);return;
+  }
+  if(cast&&elapsed<RasenShuriken.releaseMs){
+    ShurikenCinema.draw(ctx,backdrop,elapsed,cast.caster);return;
+  }
+  ctx.drawImage(backdrop,0,0,1920,1080);
+  if(!formation){drawActor(single.x,single.y,1);return}
+  if(highlight&&!attack)ring(highlight);
+  if(cast)ShurikenFx.groundSurge(ctx,cast,elapsed-cast.impactMs);
+  const animation=cast?RasenShuriken:attack?.move==='rasengan'?Rasengan:attack?.move==='katana'?katanaAnimation:attack?.move==='chidori'?chidoriAnimation:null;
+  const moving=animation?animation.pose(elapsed,fighter,attack.target):attack?attackPose(elapsed):null;
+  const attacker=['katana','chidori','kirin'].includes(attack?.move)?sasuke:fighter;
+  const rendered=moving?units.map(u=>u===attacker?moving:u).sort((a,b)=>a.y-b.y):units;
+  const effect=cast?RasenShuriken.effectAt(elapsed,cast):null;
+  if(effect){
+    // Insert after units on the same row and behind anyone closer to the camera.
+    const front=rendered.findIndex(unit=>unit.y>effect.depth);
+    rendered.splice(front<0?rendered.length:front,0,effect);
+  }
+  let recoil=0;
+  if(animation){
+    recoil=animation.recoil(elapsed,cast);
+  }else if(attack){
+    impacts.forEach(({frame},i)=>{
+      const t=(elapsed-approachMs-(frame-firstFrame)*frameMs)/(i===2?220:100);
+      if(t>=0&&t<=1)recoil+=(i===2?14:3)*Math.sin(Math.PI*t)*(1-t);
+    });
+  }
+  for(const unit of rendered){
+    if(unit===effect){RasenShuriken.drawEffect(ctx,effect,elapsed);continue}
+    drawActor(unit.x,unit.y,unit.facing,unit.phase,unit.frame,unit.opacity,attack&&unit===attack.target?recoil:0,unit.specialFrame,animation,unit===sasuke||(attacker===sasuke&&unit===moving));
+  }
+  if(moving&&!animation)hitEffects(elapsed,moving);
+}
+function advance(time){
+  if(previousTime!==null)totalMs+=time-previousTime;
+  previousTime=time;
+  const wasAttacking=Boolean(attack);
+  if(attack&&(attack.move==='taijutsu'||attack.move==='katana')){
+    const elapsed=totalMs-attack.start;
+    const start=attack.move==='taijutsu'?approachMs:katanaApproach;
+    const end=attack.move==='taijutsu'?strikeEnd:katanaStrikeEnd;
+    const sound=attack.move==='taijutsu'?taijutsuSound:katanaSound;
+    if(elapsed>=start&&elapsed<end&&soundEnabled&&sound.paused&&!paused&&!document.hidden){
+      syncUltimateSound();
+    }else if(elapsed>=end&&!sound.paused){
+      sound.pause();
+    }
+  }
+  if(attack?.cast && totalMs>=nextSoundCheck){
+    nextSoundCheck=totalMs+350;
+    const position=(totalMs-attack.start)/1000;
+    if(!ultimateSound.paused&&!ultimateSound.seeking&&position<ultimateSound.duration&&
+        Math.abs(ultimateSound.currentTime-position)>.12)ultimateSound.currentTime=position;
+  }
+  if(attack&&(attack.move==='kirin'?KirinCinema.finished():totalMs-attack.start>=attack.duration)){attack=null;syncUltimateSound();instructions()}
+  const next=Math.floor(totalMs*clip.fps/1000)%clip.count;
+  if(wasAttacking||next!==tick){
+    tick=next;
+    if(wasAttacking||!groundFrameRequest)draw();
+  }
+  request=requestAnimationFrame(advance);
+}
+function watchGroundFrames(){
+  if(!animatedGround.requestVideoFrameCallback)return;
+  const render=()=>{
+    if(!animated||paused||document.hidden){groundFrameRequest=0;return}
+    if(!attack)draw();
+    groundFrameRequest=animatedGround.requestVideoFrameCallback(render);
+  };
+  groundFrameRequest=animatedGround.requestVideoFrameCallback(render);
+}
+function syncUltimateSound(){
+  KirinCinema.sync(attack?.move==='kirin',soundEnabled,paused||document.hidden);
+  for(const [move,sound,start,end,rate,offset] of [
+    ['taijutsu',taijutsuSound,approachMs,strikeEnd,3.25,firstFrame/24],
+    ['katana',katanaSound,katanaApproach,katanaStrikeEnd,2.65,0]
+  ]){
+    const elapsed=attack?totalMs-attack.start:0;
+    if(attack?.move===move&&soundEnabled&&!paused&&!document.hidden&&elapsed>=start&&elapsed<end){
+      const position=offset+(elapsed-start)*rate/1000;
+      if(Math.abs(sound.currentTime-position)>.035)sound.currentTime=position;
+      sound.play().catch(()=>{});
+    }else sound.pause();
+  }
+  if(attack?.move==='rasengan'&&soundEnabled&&!paused&&!document.hidden){
+    const position=(totalMs-attack.start)*1.75/1000;
+    if(position<4){
+      if(Math.abs(rasenganSound.currentTime-position)>.035)rasenganSound.currentTime=position;
+      rasenganSound.play().catch(()=>{});
+    }else rasenganSound.pause();
+  }else rasenganSound.pause();
+  if(attack?.move==='chidori'&&soundEnabled&&!paused&&!document.hidden){
+    const position=(totalMs-attack.start)*chidoriRate/1000;
+    if(position<3){
+      if(Math.abs(chidoriSound.currentTime-position)>.035)chidoriSound.currentTime=position;
+      chidoriSound.play().catch(()=>{});
+    }else chidoriSound.pause();
+  }else chidoriSound.pause();
+  alignSoundOnStart=false;
+  if(!attack?.cast||!soundEnabled||paused||document.hidden){ultimateSound.pause();return}
+  const position=(totalMs-attack.start)/1000;
+  if(position>=ultimateSound.duration)return;
+  if(Math.abs(ultimateSound.currentTime-position)>.035)ultimateSound.currentTime=position;
+  nextSoundCheck=totalMs+350;
+  alignSoundOnStart=true;
+  ultimateSound.play().catch(()=>{});
+}
+ultimateSound.onplaying=()=>{
+  if(!alignSoundOnStart||!attack?.cast)return;
+  alignSoundOnStart=false;
+  const position=(totalMs-attack.start)/1000;
+  if(Math.abs(ultimateSound.currentTime-position)>.075)ultimateSound.currentTime=position;
+};
+soundButton.onclick=()=>{
+  soundEnabled=!soundEnabled;
+  soundButton.setAttribute('aria-pressed',String(soundEnabled));
+  soundButton.textContent=soundEnabled?'Son activé':'Son coupé';
+  syncUltimateSound();
+};
+function updatePlayback(){
+  cancelAnimationFrame(request);
+  if(groundFrameRequest){
+    animatedGround.cancelVideoFrameCallback(groundFrameRequest);
+    groundFrameRequest=0;
+  }
+  previousTime=null;
+  syncUltimateSound();
+  if(animated&&!paused&&!document.hidden){
+    animatedGround.play().then(()=>{
+      if(animated&&!paused&&!document.hidden&&!groundFrameRequest)watchGroundFrames();
+    }).catch(()=>{});
+    request=requestAnimationFrame(advance);
+  }else{
+    animatedGround.pause();
+  }
+}
+pause.onclick=()=>{
+  paused=!paused;pause.textContent=paused?'Reprendre':'Pause';updatePlayback();
+};
+document.addEventListener('visibilitychange',updatePlayback);
+function moveReady(move){
+  if(move==='kirin')return kirinReady;
+  if(move==='chidori')return chidoriReady;
+  if(move==='katana')return katanaReady;
+  if(move==='rasenshuriken')return shurikenReady;
+  if(move==='rasengan')return rasenganReady;
+  return combatReady;
+}
+function instructions(){
+  toggle.setAttribute('aria-pressed',formation);
+  toggle.textContent=formation?'Voir Naruto seul':'Voir le 6 contre 6';
+  moves.hidden=!formation;
+  soundButton.hidden=!formation;
+  for(const button of moveButtons){
+    button.disabled=!animated||!moveReady(button.id)||Boolean(attack);
+    button.setAttribute('aria-pressed',selectedMove===button.id);
+  }
+  if(ready&&!animated){help.textContent='L’animation Idle.webp est introuvable dans le dossier Animations.';return}
+  if(!formation){help.textContent='Clique sur le terrain pour placer Naruto.';return}
+  if(ready&&!moveButtons.some(button=>moveReady(button.id))){help.textContent='Les animations d’attaque sont indisponibles.';return}
+  if(attack){help.textContent=moveNames[attack.move];return}
+  const name=selectedMove==='taijutsu'?'combo de taijutsu':moveNames[selectedMove];
+  help.textContent=['katana','chidori','kirin'].includes(selectedMove)?'Clique sur Naruto pour lancer '+name+'. Entrée lance aussi l’attaque.':'Clique sur Sasuke pour lancer le '+name+'. Entrée lance aussi l’attaque.';
+}
+function selectMove(move){
+  selectedMove=move;highlight=null;instructions();draw();arena.focus({preventScroll:true});
+}
+for(const button of moveButtons)button.onclick=()=>selectMove(button.id);
+toggle.onclick=()=>{
+  formation=!formation;attack=null;highlight=null;syncUltimateSound();instructions();
+  arena.style.cursor=formation?'default':'crosshair';draw();
+};
+function mapPoint(e){
+  const r=arena.getBoundingClientRect(),x=(e.clientX-r.left)*1920/r.width,y=(e.clientY-r.top)*1080/r.height;
+  return {x,y};
+}
+function pickTarget(x,y){
+  for(const unit of (['katana','chidori','kirin'].includes(selectedMove)?[fighter]:enemies)){
+    const scale=scaleAt(unit.y),dx=(x-unit.x)/scale,dy=(y-unit.y)/scale;
+    if(dy>=-207&&dy<=25&&Math.abs(dx)<(dy<-145?39:63))return unit;
+  }
+  return null;
+}
+function startAttack(target){
+  if(!target||attack||!moveReady(selectedMove)||!animated||!formation||paused)return;
+  const cast=selectedMove==='rasenshuriken'?RasenShuriken.plan(fighter,target):null;
+  const duration=cast?cast.duration:selectedMove==='rasengan'?Rasengan.duration:selectedMove==='katana'?katanaDuration:selectedMove==='chidori'?chidoriDuration:selectedMove==='kirin'?KirinCinema.duration():strikeEnd+returnMs;
+  highlight=target;attack={target,move:selectedMove,start:totalMs,duration,cast};
+  if(cast||['chidori','rasengan','kirin'].includes(selectedMove))syncUltimateSound();
+  instructions();draw();
+}
+arena.onpointermove=e=>{
+  if(!formation||attack)return;
+  const {x,y}=mapPoint(e),target=pickTarget(x,y);
+  arena.style.cursor=target?'pointer':'default';
+  if(highlight!==target){highlight=target;draw()}
+};
+arena.onpointerleave=()=>{if(highlight&&!attack){highlight=null;draw()}};
+arena.onkeydown=e=>{
+  if(!formation||attack)return;
+  if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp'].includes(e.key)){
+    e.preventDefault();
+    const delta=['ArrowRight','ArrowDown'].includes(e.key)?1:-1;
+    const targets=['katana','chidori','kirin'].includes(selectedMove)?[fighter]:enemies;
+    highlight=highlight?targets[(targets.indexOf(highlight)+delta+targets.length)%targets.length]:targets[0];draw();
+  }else if(e.key==='Enter'||e.key===' '){e.preventDefault();startAttack(['katana','chidori','kirin'].includes(selectedMove)?fighter:sasuke)}
+};
+arena.onclick=e=>{
+  const {x,y}=mapPoint(e);
+  if(formation){startAttack(pickTarget(x,y));return}
+  if(x<170||x>1740||y<380||y>929)return;
+  single={x,y};draw();
+};
+const specialLoad=typeof Rasengan!=='undefined'?Rasengan.load():Promise.reject();
+const ultimateLoad=typeof RasenShuriken!=='undefined'&&typeof ShurikenFx!=='undefined'?RasenShuriken.load():Promise.reject();
+Promise.allSettled([ground.decode(),idle.decode(),actor.decode(),combo.decode(),specialLoad,ultimateLoad,sasukeIdle.decode(),sasukeCombo.decode(),chidoriAtlas.decode(),KirinCinema.load()]).then(([mapResult,idleResult,,comboResult,specialResult,ultimateResult,,katanaResult,chidoriResult,kirinResult])=>{
+  if(mapResult.status==='rejected'){help.textContent='Le décor est introuvable dans le dossier Décor.';return}
+  ready=true;
+  animated=idleResult.status==='fulfilled';
+  combatReady=comboResult.status==='fulfilled';
+  rasenganReady=specialResult.status==='fulfilled';
+  shurikenReady=ultimateResult.status==='fulfilled';
+  katanaReady=katanaResult.status==='fulfilled';
+  chidoriReady=chidoriResult.status==='fulfilled';
+  kirinReady=kirinResult.status==='fulfilled';
+  selectedMove=moveButtons.find(button=>moveReady(button.id))?.id||'taijutsu';
+  pause.disabled=!animated;
+  instructions();draw();updatePlayback();
+});
+</script></html>

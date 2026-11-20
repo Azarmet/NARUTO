@@ -1,0 +1,9 @@
+Animate Naruto releasing his Wind Style Rasen Shuriken toward screen right. One continuous 3-second, 16:9 anime shot, readable at 640 × 360. Start exactly on the supplied raised-palm pose. Finish on the supplied combat guard. Preserve his size, screen-right gaze, elevated three-quarter view, outfit and cel-shaded linework throughout.
+
+0.0–0.6 s — His empty right palm begins above his head. He shifts weight onto his rear leg and draws the raised elbow back slightly. His left arm reaches forward for balance. Keep the right hand readable against the background.
+
+0.6–1.1 s — Make one decisive overhand throw. The hips turn, the right shoulder follows, then the forearm whips through. As the right hand passes shoulder height toward screen right, let the fingers flick open once. Show a clear release silhouette beyond his torso. The game adds the projectile at this instant.
+
+1.1–3.0 s — Let the right arm continue down and across naturally. The torso slows first, the two headband ribbons catch up, and Naruto settles into the supplied guard. Keep his weight over the original stance; the rear heel may pivot in place.
+
+Lock the camera and framing. Keep both sandals, fingertips and ribbons inside a 15% margin on every edge. Render only Naruto against uniform #FF00FF, including gaps in the silhouette. Both hands stay visibly empty. Leave the flight path clear of drawn discs, streaks, glow, particles, impact effects, ground shadows and other characters.
